@@ -1,0 +1,72 @@
+#!/usr/bin/expect -f
+
+# Usage: ./bosh-login.exp <environment-alias> <username> <password>
+
+set timeout 15
+set env_alias [lindex $argv 0]
+set username [lindex $argv 1]
+set password [lindex $argv 2]
+
+# Check if all arguments are provided
+if {$argc != 3} {
+    puts "Usage: $argv0 <environment-alias> <username> <password>"
+    exit 1
+}
+
+#log_user 0
+# Start the bosh log-in command
+spawn bosh -e $env_alias log-in
+
+sleep 5
+send "$username\r"
+sleep 2
+send "$password\r"
+
+
+# Wait for username prompt and send username
+#expect {
+#    "Email ():" {
+#        send "$username\r"
+#    }
+#    "username:" {
+#        send "$username\r"
+#    }
+#    timeout {
+#        puts "Timeout waiting for username prompt"
+#        exit 1
+#    }
+#}
+
+# Wait for password prompt and send password
+#expect {
+#    "Password ():" {
+#        send "$password\r"
+#    }
+#    "password:" {
+#        send "$password\r"
+#    }
+#    timeout {
+#        puts "Timeout waiting for password prompt"
+#        exit 1
+#    }
+#}
+
+#log_user 1
+# Wait for completion
+expect {
+    "Successfully authenticated" {
+        puts "\nLogin successful"
+        exit 0
+    }
+    "Failed to authenticate" {
+        puts "\nLogin failed - check credentials"
+        exit 1
+    }
+    eof {
+        exit 0
+    }
+    timeout {
+        puts "Timeout waiting for authentication result"
+        exit 1
+    }
+}
