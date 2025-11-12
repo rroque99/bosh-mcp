@@ -19,16 +19,16 @@ foo@bar:~$ uv run src/main.py
 INFO:     Started server process [10]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:80 (Press CTRL+C to quit)
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
 ```
 
 **Docker**
 ```bash
-foo@bar:~$ docker run --rm -p 80:80 rroque99/bosh-mcp:latest
+foo@bar:~$ docker run --rm -p 8080:8080 rroque99/bosh-mcp:latest
 INFO:     Started server process [10]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:80 (Press CTRL+C to quit)
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
 ```
 
 
@@ -47,7 +47,8 @@ This MCP server doesn't currently support OAUTH so using Claude Desktop with thi
         "Bosh-mcp": {
             "command": "<path-to-mcp-proxy>",
             "args": [
-                "http://<IP or FQDN for BOSH mcp>/sse"
+                "--no-verify-ssl",
+                "https://<IP or FQDN for BOSH mcp>/sse"
             ]
         }
     }

@@ -12,7 +12,7 @@ import asyncio
 requests.packages.urllib3.disable_warnings()
 
 # Initialize FastMCP server
-mcp = FastMCP("BOSH-MCP", host="0.0.0.0", port=80)
+mcp = FastMCP("BOSH-MCP", host="0.0.0.0", port=8080)
 
 
 

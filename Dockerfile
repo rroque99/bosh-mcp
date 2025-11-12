@@ -1,18 +1,19 @@
 FROM rroque99/bosh-tools:latest
 
-COPY pyproject.toml /workspace
+EXPOSE 8080
 
-COPY src/ /workspace/src/
-#COPY .venv/* /workspace/.venv/
+RUN useradd -m -u 1000 -s /bin/bash boshuser
 
+USER boshuser
 
-ENV PATH="/root/.local/bin/:/root/.cargo/bin:${PATH}"
+RUN mkdir /home/boshuser/workspace
 
-EXPOSE 80
+COPY pyproject.toml /home/boshuser/workspace
 
-WORKDIR /workspace
+COPY src/ /home/boshuser/workspace/src/
+
+WORKDIR /home/boshuser/workspace
 
 RUN uv sync
 
 CMD ["uv", "run", "src/main.py"]
-#CMD ["/bin/bash"]

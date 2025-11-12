@@ -25,19 +25,13 @@ RUN wget -O /usr/local/bin/bosh https://github.com/cloudfoundry/bosh-cli/release
     && chmod +x /usr/local/bin/bosh
 
 # Install uv (Astral's Python package manager)
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Add uv to PATH
-ENV PATH="/root/.cargo/bin:${PATH}"
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
 
 # Verify installations
 RUN bosh --version && \
     openssl version && \
     python --version 
 #    uv --version
-
-# Set working directory
-WORKDIR /workspace
 
 # Default command
 CMD ["/bin/bash"]
