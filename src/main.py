@@ -1,15 +1,25 @@
-from typing import Optional, Dict, Any, Union
-import httpx
-from mcp.server.fastmcp import FastMCP, Context
-import subprocess, os, time
+from mcp.server.fastmcp import FastMCP #, Context
+import subprocess, os #, time
 import requests
 import json
 import time
-import re
 import asyncio
+import os
+
+
+from bosh_tools.boshValidator import boshValidator
+from tanzu_utils.cfgenai import CFGenAIService
+
+import functools
+
+print = functools.partial(print, flush=True)
 
 # Disable SSL warnings
 requests.packages.urllib3.disable_warnings()
+
+g_modelDetails = {}
+g_boshv: boshValidator = None
+g_bosh_readonly: bool = False
 
 # Initialize FastMCP server
 mcp = FastMCP("BOSH-MCP", host="0.0.0.0", port=8080)
@@ -50,6 +60,33 @@ async def execute_shell_cmd(cmd: str, remove_esc: bool = False) -> tuple[int, st
     return return_code, stdout
 
 
+def load_env():
+
+    global g_bosh_readonly
+    global g_boshv
+
+    genai_service_name = os.getenv('GENAI_SERVICE_NAME', None)
+    print(f"genai_service_name: {genai_service_name}")
+
+    g_bosh_readonly = os.getenv('BOSH_READONLY','false').lower() in ('true','1')
+    print(f"g_bosh_readonly: {g_bosh_readonly}")
+
+    if genai_service_name != None:
+
+        try:
+
+            chat_service = CFGenAIService(genai_service_name)
+
+        except ValueError as ve:
+            print(ve)
+            return
+        
+        print(f"apiBase: {chat_service.api_base}\napiKey: {chat_service.api_key}\nmodelName: {chat_service.list_models()[0]["name"]}")
+        g_boshv = boshValidator(chat_service.api_base + "/openai/v1", chat_service.list_models()[0]["name"], chat_service.api_key)
+
+    else:
+        print("GENAI_SERVICE_NAME env variable not found")
+
 
 @mcp.tool()
 async def bosh_director_login(director: str, username: str, password: str ) -> str:
@@ -80,8 +117,8 @@ async def bosh_director_login(director: str, username: str, password: str ) -> s
 @mcp.tool()
 async def execute_bosh_cmd(bosh_cmd: str) -> str:
     """Execute a bosh cmd on a bosh director.  Always specify bosh -e <director> in your cmd.
-    If this command returns a login or authentication error
-    call bosh_director_login to log into the bosh director.
+    If this command returns a login or authentication error call bosh_director_login to log into the bosh director.
+    If executing 'bosh ssh <cmd>' you MUST provide the full path to <cmd>.
 
     Args:
         bosh_cmd: bosh cmd
@@ -102,6 +139,14 @@ async def execute_bosh_cmd(bosh_cmd: str) -> str:
         if bosh_cmd_stripped.lower().find(disallowed_str) != -1:
             return f"Error: {disallowed_str} commands are not permitted"
         
+    # if read-only env variable is set lets validate if the bosh cmd is read-only
+    if g_bosh_readonly:
+
+        read_only = await g_boshv.boshCmdReadOnly(bosh_cmd)
+
+        if not read_only:
+            return "bosh cmd is not read-only.  Only read-only bosh cmds are permitted"
+
 
     ret_code, msg = await execute_shell_cmd(bosh_cmd)
 
@@ -111,6 +156,9 @@ async def execute_bosh_cmd(bosh_cmd: str) -> str:
 
 
 def main():
+
+    load_env()
+
     mcp.run(transport='sse')
 
 
