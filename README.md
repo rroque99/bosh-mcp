@@ -76,7 +76,7 @@ This MCP server doesn't currently support OAUTH so using Claude Desktop with thi
 
 ## Example Prompt
 
-Below is an example prompt to get things going.  It's understandable that we shouldn't be passing usernames and passwords into a prompt however this is currently a proof of concept until OAUTH is fully supported
+Below is an example prompt to get things going.
 
 ![Config](img/claude-desktop.png)
 
