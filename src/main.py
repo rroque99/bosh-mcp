@@ -20,6 +20,7 @@ requests.packages.urllib3.disable_warnings()
 g_modelDetails = {}
 g_boshv: boshValidator = None
 g_bosh_readonly: bool = False
+g_default_bosh_director = None
 
 # Initialize FastMCP server
 mcp = FastMCP("BOSH-MCP", host="0.0.0.0", port=8080)
@@ -64,6 +65,7 @@ def load_env():
 
     global g_bosh_readonly
     global g_boshv
+    global g_default_bosh_director
 
     genai_service_name = os.getenv('GENAI_SERVICE_NAME', None)
     print(f"genai_service_name: {genai_service_name}")
@@ -86,6 +88,36 @@ def load_env():
 
     else:
         print("GENAI_SERVICE_NAME env variable not found")
+
+
+    bosh_director = os.getenv('BOSH_DIRECTOR', None)
+    print(f"bosh_director: {bosh_director}")
+    g_default_bosh_director = bosh_director
+
+    bosh_username = os.getenv('BOSH_USERNAME', None)
+    print(f"bosh_username: {bosh_username}")
+
+    bosh_password = os.getenv('BOSH_PASSWORD', None)
+    print(f"bosh_password: XXXXXX")
+
+    if bosh_director and bosh_username and bosh_password:
+
+        print("Calling bosh_director_login")
+        msg = asyncio.run(bosh_director_login( bosh_director, bosh_username, bosh_password))
+        print(msg)
+    
+
+@mcp.tool()
+async def get_default_bosh_director() -> str:
+    """This returns the default bosh director IP or FQDN, or "None" if default bosh director is not set.
+    If an IP or FQDN is returned then logging into the bosh director is not required.  If "None" is returned then the 
+    user must specify bosh direct IP or FQDN, username and password and bosh_director_login should then be called.  
+    
+    """
+    if g_default_bosh_director:
+        return g_default_bosh_director
+    else:
+        return "None"
 
 
 @mcp.tool()

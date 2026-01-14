@@ -1,41 +1,60 @@
 # BOSH MCP Server
 
-A BOSH MCP Server written in Python.  It exposes only two tools, bosh_director_login and execute_bosh_command.  The LLM does the rest!
+This BOSH MCP Server is written in Python.  It exposes only two tools, bosh_director_login and execute_bosh_command.  The LLM does the rest!
 
+A BOSH MCP Server can be very helpful in troubleshooting and analyzing Tanzu Platform however it can also be very dangerous and perform unexpected system changes.  With that in mind this version of the BOSH MCP server leverages a strategy that uses Tanzu Platform's AI Services to validate BOSH commands sent by the LLM before they are executed.  If the BOSH MCP server is configured for "read-only" then any BOSH commands that may result in system changes are denied.  
 
 
 Note:
 - The MCP server is configured to use SSE
+- AI Services Tile must be deployed and configured
 - Container for the MCP Server can be found [here](https://hub.docker.com/r/rroque99/bosh-mcp).
 
 
 ## Running the MCP Server
 
-You can run the MCP server using [uv](https://docs.astral.sh/uv/getting-started/installation/) or you can deploy it using docker or pushing the container to Tanzu Platform.
+**Deploying to Tanzu Platform(CF)**
 
-**UV**
-```bash
-foo@bar:~$ uv run src/main.py
-INFO:     Started server process [10]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-```
+1. Create a service instance that provides chat LLM capabilities:
 
-**Docker**
-```bash
-foo@bar:~$ docker run --rm -p 8080:8080 rroque99/bosh-mcp:latest
-INFO:     Started server process [10]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-```
+    ```bash
+    cf create-service genai [plan-name] chat-llm
+    ```
+2. Edit manifest.yml and make changes specified below
 
+    ```yaml
+    ---
+    applications:
+    - name: bosh-mcp 
+    # Use Docker image from a container registry
+    docker:
+        image: rroque99/bosh-mcp:genai
+        username: rroque99  # CHANGE TO YOUR DOCKER USERNAME 
+    
+    # Application instances and resources
+    instances: 1 
+    memory: 512M
+    disk_quota: 1G
+    
+    # Environment variables
+    env:
+        BOSH_READONLY: true           # true for "read-only" system access, false for "full" system access
+        GENAI_SERVICE_NAME: chat-llm  # CHANGE TO YOUR SERVICE NAME IF NOT chat-llm
+        BOSH_DIRECTOR: 10.10.0.6      # CHANGE TO YOUR BOSH DIRECTOR IP   
+        BOSH_USERNAME: director       # CHANGE TO YOUR BOSH USERNAME
+        BOSH_PASSWORD: password       # CHANGE TO YOUR BOSH PASSWORD
 
-**Tanzu Platform(CF)**
-```bash
-foo@bar:~$ cf push bosh-mcp --docker-image rroque99/bosh-mcp:latest
-```
+    # Service bindings
+    services:
+    - chat-llm  #CHANGE TO YOUR SERVICE NAME IF NOT chat-llm
+    ```
+
+3. Push MCP to the platform:
+
+    ```bash
+    cf push
+    ```
+
 
 ## Configuring Claude Desktop
 

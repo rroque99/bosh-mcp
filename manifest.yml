@@ -1,0 +1,24 @@
+---
+applications:
+- name: bosh-mcp 
+  # Use Docker image from a container registry
+  docker:
+    image: rroque99/bosh-mcp:genai
+    username: rroque99 
+  
+  # Application instances and resources
+  instances: 1 
+  memory: 512M
+  disk_quota: 1G
+  
+  # Environment variables
+  env:
+    BOSH_READONLY: false 
+    GENAI_SERVICE_NAME: chat-llm
+    BOSH_DIRECTOR: 10.10.0.6
+    BOSH_USERNAME: director
+    BOSH_PASSWORD: sdNqAhr16zzpGPhMy34Ghazfn-zj18ZI 
+
+  # Service bindings
+  services:
+  - chat-llm 

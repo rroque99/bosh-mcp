@@ -14,7 +14,7 @@ class boshValidator:
 
         
         self.llm = ChatOpenAI(
-            temperature=0.9,
+            temperature=0.0,
             base_url=apiBase, 
             model=model, 
             api_key=apiKey,
